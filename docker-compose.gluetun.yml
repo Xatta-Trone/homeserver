@@ -1,0 +1,151 @@
+services:
+  gluetun:
+    image: qmcgaw/gluetun
+    container_name: gluetun
+    #network_mode: "bridge" # Use the default bridge network
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    ports:
+      - 8888:8888/tcp # HTTP proxy
+      - 8388:8388/tcp # Shadowsocks
+      - 8388:8388/udp # Shadowsocks
+      - 5800:5800 #firefox
+      - 8080:8080 #qbittorrent
+      - 6881:6881 #qbit
+      - 6881:6881/udp #qbit
+      - 8989:8989 #sonarr
+      - 7878:7878 #radarr
+      - 9696:9696 #prowlarr
+      - 6767:6767 #bazarr
+      - 5055:5055 #jellyseer
+      - 8191:8191 #flarrsolver
+    volumes:
+      - /mnt/docker/gluetun/appdata:/gluetun
+    environment:
+      - VPN_SERVICE_PROVIDER=surfshark
+      - VPN_TYPE=wireguard
+      - OPENVPN_USER=xxxxxxxxxxxxxx
+      - OPENVPN_PASSWORD=xxxxxxxxxxxxxxxx
+      - WIREGUARD_PRIVATE_KEY=xxxxxxxxxxxxxxxxxxx
+      - WIREGUARD_ADDRESSES=xxxxxxxxx
+      - SERVER_HOSTNAMES=xxxxxxx
+      - TZ=Asia/Tokyo
+      #- UPDATER_PERIOD=24h
+
+  firefox:
+    image: jlesage/firefox
+    container_name: firefox
+    network_mode: "service:gluetun"
+    volumes:
+      - /mnt/docker/firefox/appdata:/config:rw
+    restart: unless-stopped
+  qbittorrent:
+    image: lscr.io/linuxserver/qbittorrent:latest
+    container_name: qbittorrent
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Etc/UTC
+      - WEBUI_PORT=8080
+      - TORRENTING_PORT=6881
+    volumes:
+      - /mnt/docker/qbittorrent/appdata:/config
+      - /mnt/ext/sg6tb/shared/downloads:/downloads #optional
+    network_mode: "service:gluetun"
+    depends_on:
+      - gluetun
+    restart: unless-stopped
+  sonarr:
+    image: lscr.io/linuxserver/sonarr:latest
+    container_name: sonarr
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Etc/UTC
+    volumes:
+      - /mnt/docker/sonarr/data:/config
+      - /mnt/ext:/storage #optional
+      - /mnt/ext/sg6tb/shared/downloads:/downloads #optional
+    #ports:
+    #  - 8989:8989
+    network_mode: "service:gluetun"
+    depends_on:
+      - gluetun
+    restart: unless-stopped
+  radarr:
+    image: lscr.io/linuxserver/radarr:latest
+    container_name: radarr
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Etc/UTC
+    volumes:
+      - /mnt/docker/radarr:/config
+      - /mnt/ext:/storage #optional
+      - /mnt/ext/sg6tb/shared/downloads:/downloads #optional
+    #ports:
+    #  - 7878:7878
+    network_mode: "service:gluetun"
+    depends_on:
+      - gluetun
+    restart: unless-stopped
+  prowlarr:
+    image: lscr.io/linuxserver/prowlarr:latest
+    container_name: prowlarr
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Etc/UTC
+    volumes:
+      - /mnt/docker/prowlarr/data:/config
+    #ports:
+    #  - 9696:9696
+    network_mode: "service:gluetun"
+    depends_on:
+      - gluetun
+    restart: unless-stopped
+  bazarr:
+    image: lscr.io/linuxserver/bazarr:latest
+    container_name: bazarr
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Etc/UTC
+    volumes:
+      - /mnt/docker/bazarr/config:/config
+      - /mnt/ext:/storage #optional
+    #ports:
+    #  - 6767:6767
+    network_mode: "service:gluetun"
+    depends_on:
+      - gluetun
+    restart: unless-stopped
+  jellyseerr:
+    image: fallenbagel/jellyseerr:latest
+    container_name: jellyseerr
+    environment:
+      - LOG_LEVEL=debug
+      - TZ=Asia/Tashkent
+      - PORT=5055 #optional
+    #ports:
+    #  - 5055:5055
+    network_mode: "service:gluetun"
+    depends_on:
+      - gluetun
+    volumes:
+      - /mnt/docker/jellyseerr/appdata/config:/app/config
+    restart: unless-stopped
+  flaresolverr:
+    image: ghcr.io/flaresolverr/flaresolverr:latest
+    container_name: flaresolverr
+    #ports:
+    #  - "8191:8191"
+    network_mode: "service:gluetun"
+    depends_on:
+      - gluetun
+    environment:
+      - LOG_LEVEL=info
+    restart: unless-stopped
+

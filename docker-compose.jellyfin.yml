@@ -1,0 +1,23 @@
+services:
+  jellyfin:
+    image: lscr.io/linuxserver/jellyfin:latest
+    container_name: jellyfin
+    environment:
+      - PUID=1000  # Change to your user ID
+      - PGID=1000  # Change to your group ID
+      - TZ=America/Los_Angeles  # Change to your timezone
+      - DOCKER_MODS=linuxserver/mods:jellyfin-amd
+      - LIBVA_DRIVER_NAME=radeonsi
+    volumes:
+      - ./config:/config  # Configuration files
+      # - ./cache:/cache  # Cache directory
+      - /mnt/ext:/data  # Media files
+    ports:
+      - 8096:8096  # Jellyfin HTTP port
+      - 8920:8920  # Jellyfin HTTPS port (optional)
+      - 7359:7359/udp # optional
+      - 1900:1900/udp # optional
+    devices:
+      - /dev/dri:/dev/dri
+      - /dev/kfd:/dev/kfd
+    restart: unless-stopped

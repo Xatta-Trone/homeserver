@@ -1,0 +1,13 @@
+---
+version: "3.8"
+services:
+  pinger:
+    image: alpine:latest
+    container_name: url_pinger
+    environment:
+      - URLS=https://url1.com,https://url2.com
+    entrypoint: /bin/sh -c "apk add --no-cache curl && echo '0 * * * * /bin/sh /ping_urls.sh' | crontab - && \
+      echo '#!/bin/sh' > /ping_urls.sh && \ echo 'URLS=\"$$URLS\"' >>
+      /ping_urls.sh && \ echo 'for URL in $${URLS//,/ }; do echo \$(date) Pinging $$URL;
+      curl -Is $$URL | head -n 1; done' >> /ping_urls.sh && \ chmod +x
+      /ping_urls.sh && \ crond -f -d 8"
